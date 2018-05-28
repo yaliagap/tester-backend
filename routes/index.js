@@ -1,59 +1,119 @@
-var express = require('express');
 var Promise = require('promise');
 var utils = require('../utils');
-var router = express.Router();
+
 var multipart = require('connect-multiparty');
 var multipartMiddleware = multipart();
-var bots = [
-	{
-		name: "Sorteo Sunat",
-		username : "ec252c73-3b89-4bc2-9036-f8953a3b8448",
-	    password : "HrSuwaUcjrhx",
-	    workspaceId : "4fd13b5d-5290-487e-923d-f505cda95f31",
-	    variable: "case"
-	},
-	{
-		name: "Devolucion Sunat",
-		username : "5f1f10e9-6632-4ddc-bbab-34ff086c86b7",
-	    password : "WfkTWWQyB1xY",
-	    workspaceId : "255aea96-0b52-4b1b-800e-124d1abd2047",
-	    variable: "case"
-	},
-	{
-		name: "Sharff",
-		username : "b30fb32e-e849-4e42-8dea-720e6ef25c7f",
-	    password : "0sjXEIwVehKN",
-	    workspaceId : "8bb030e7-fba1-46db-8881-34213a3a0ebb",
-	    variable: "flag"
-	}
-]
-router.get('/', function(req, res, next) {
-	res.render('index', {bots: bots});
-});
+const sql = require('../db.js');
+const SQL_CONN = new sql();
+const UsuarioModel = require('../models/Usuario.js');
+const Usuario = new UsuarioModel(SQL_CONN);
+const BotModel = require('../models/Bot.js');
+const Bot = new BotModel(SQL_CONN);
 
-router.post('/results', multipartMiddleware, function(req,res,next) {
-	var results = {};
-	var conversations = [];
-	var test = utils.generateCSV(req.files.testcsv);
-	var bot = bots[req.body.bot];
-	for (var j = 0; j < test.length; j++) {
-		var conversation = test[j];
-		test[j].unshift({
-			"u": "",
-			"b": "start",
-			"hidden": true
+
+module.exports = function(authChecker) {
+	var express = require('express');
+	var router = express.Router();
+
+	router.post('/authenticate', multipartMiddleware, function(req,res,next) {
+		Usuario.login(req.body.username, req.body.password).then(function(login_info){
+			req.session.username=req.body.username;
+			req.session.save();
+			login_info.token = req.session.id;
+			res.json(login_info);
+		}).catch(function(err){
+			res.json(err);
 		});
-		var promiseX = new Promise(function(resolve, reject) {
-			var funcs = conversation.map(value => (context) => utils.testRequest(value["u"], value["b"], bot, context, results));
-			utils.promiseSerial(funcs).then(function(values) {
-			  	resolve(results);
-			});
-		});
-		conversations.push(promiseX);
-	}
-	Promise.all(conversations).then(function(values) {
-	  res.render("results", {results: results, title:"Resultados de la prueba"});
 	});
-	
-});
-module.exports = router;
+	router.get('/bots', [authChecker, multipartMiddleware], function(req,res,next){
+		Bot.get().then(function(data) {
+			res.json(data);
+		}).catch(function(err){
+			res.json(err);
+		});
+	});
+	router.post('/bots/save', [authChecker, multipartMiddleware], function(req,res,next){
+		var bot = {};
+		if (req.body.workspace_id && req.body.username && req.body.password && req.body.nombre) {
+			bot.workspace_id = req.body.workspace_id;
+			bot.usuario = req.body.username;
+			bot.password = req.body.password;
+			bot.nombre = req.body.nombre;
+			utils.firstRequest(bot).then(function() {
+				Bot.save(bot.nombre, bot.usuario, bot.password, bot.workspace_id).then(function(data) {
+					res.json(data);
+				}).catch(function(err){
+					res.json(err);
+				});
+			}).catch(function(err) {
+				res.json(err);
+			});
+		} else {
+			res.json({"error": "Por favor llenar todos los campos."});
+		}
+		
+	});
+	router.post('/bots/delete', [authChecker, multipartMiddleware], function(req,res,next){
+		Bot.delete(req.body.id).then(function(data) {
+			res.json(data);
+		}).catch(function(err){
+			res.json(err);
+		});
+	});
+	router.post('/resultsjson', [authChecker, multipartMiddleware], function(req,res,next) {
+		var results = {};
+		var conversations = [];
+		if (req.body.bot) {
+			if (req.files.testcsv) {
+				utils.generateCSV(req.files.testcsv).then(function(test) {
+					Bot.get(["id", "=", req.body.bot]).then(function(data) {
+						var bot = data[0];
+						bot.variable = "case";
+						for (var j = 0; j < test.length; j++) {
+							var conversation = test[j];
+							test[j].unshift({
+								"u": "",
+								"b": "start",
+								"hidden": true
+							});
+							var promiseX = new Promise(function(resolve, reject) {
+								var funcs = conversation.map(value => (context) => utils.testRequest(value["u"], value["b"], bot, context, results));
+								utils.promiseSerial(funcs).then(function(values) {
+								  	resolve(results);
+								});
+							});
+							conversations.push(promiseX);
+						}
+						Promise.all(conversations).then(function(values) {
+							utils.getStatistics(results).then(function(processedResults) {
+								res.json({
+									"results": {
+										"list": processedResults.list, 
+										"percentage": processedResults.percentage,
+										"percentagePerClass": {
+											"classes": processedResults.classes,
+											"correct": processedResults.correct,
+											"incorrect": processedResults.incorrect
+										}
+									}
+								});
+							});
+						});
+					}).catch(function(err){
+						console.log(err);
+						res.json(err);
+					});
+				}).catch(function(err){
+					console.log(err);
+					res.json(err);
+				});
+			} else {
+				res.json({"results": {},"error": "Ingresa un archivo"});
+			}
+		} else {
+			res.json({"results": results, "error": "Selecciona un asistente"});
+		}
+	});
+
+	return router;
+}

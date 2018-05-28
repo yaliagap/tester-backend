@@ -11,7 +11,7 @@ const BotModel = require('../models/Bot.js');
 const Bot = new BotModel(SQL_CONN);
 
 
-module.exports = function(authChecker) {
+module.exports = function(authCheckSession, authClearSession) {
 	var express = require('express');
 	var router = express.Router();
 
@@ -25,14 +25,15 @@ module.exports = function(authChecker) {
 			res.json(err);
 		});
 	});
-	router.get('/bots', [authChecker, multipartMiddleware], function(req,res,next){
+	router.post('/logout', authClearSession);
+	router.get('/bots', [authCheckSession, multipartMiddleware], function(req,res,next){
 		Bot.get().then(function(data) {
 			res.json(data);
 		}).catch(function(err){
 			res.json(err);
 		});
 	});
-	router.post('/bots/save', [authChecker, multipartMiddleware], function(req,res,next){
+	router.post('/bots/save', [authCheckSession, multipartMiddleware], function(req,res,next){
 		var bot = {};
 		if (req.body.workspace_id && req.body.username && req.body.password && req.body.nombre) {
 			bot.workspace_id = req.body.workspace_id;
@@ -51,16 +52,15 @@ module.exports = function(authChecker) {
 		} else {
 			res.json({"error": "Por favor llenar todos los campos."});
 		}
-		
 	});
-	router.post('/bots/delete', [authChecker, multipartMiddleware], function(req,res,next){
+	router.post('/bots/delete', [authCheckSession, multipartMiddleware], function(req,res,next){
 		Bot.delete(req.body.id).then(function(data) {
 			res.json(data);
 		}).catch(function(err){
 			res.json(err);
 		});
 	});
-	router.post('/resultsjson', [authChecker, multipartMiddleware], function(req,res,next) {
+	router.post('/resultsjson', [authCheckSession, multipartMiddleware], function(req,res,next) {
 		var results = {};
 		var conversations = [];
 		if (req.body.bot) {

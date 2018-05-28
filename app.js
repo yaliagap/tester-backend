@@ -19,7 +19,18 @@ var session = require("express-session");
 var sstore = require('sessionstore');
 sessionStore = sstore.createSessionStore();
 
-app.use(session({secret:"Q25X6I3",resave:false,saveUninitialized:false, store: sessionStore }) );
+app.use(session(
+  {
+    secret:"Q25X6I3",
+    resave:false,
+    saveUninitialized:false, 
+    store: sessionStore 
+    /*cookie: {
+      httpOnly: true,
+      maxAge: 1*60*60
+    } */
+  }) 
+);
 
 app.use(logger('dev'));
 app.use(bodyParser.json());
@@ -40,8 +51,8 @@ app.options("/*", function(req, res, next){
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
   res.send(200);
 });
-var authChecker = function(req, res, next) {
-  console.log("authchecker");
+var authCheckSession = function(req, res, next) {
+  console.log("authCheckSession");
   if (req.headers && req.headers.authorization) {
     var token = req.headers.authorization.replace('Bearer ', '');
     sessionStore.get(token, function(err, data) {
@@ -55,7 +66,17 @@ var authChecker = function(req, res, next) {
     res.json({'errorType': 'AUTH', 'error': 'Error de autenticación.'});
   }
 }
-var index = routes(authChecker);
+var authClearSession = function(req, res, next) {
+  if (req.headers && req.headers.authorization) {
+    var token = req.headers.authorization.replace('Bearer ', '');
+    sessionStore.destroy(token, function(err, data) {
+        res.json({'success': '1'});
+    });
+  } else {
+    res.json({'errorType': 'AUTH', 'error': 'Token Inválido.'});
+  }
+}
+var index = routes(authCheckSession, authClearSession);
 app.use('/', index);
 
 app.use(function(req, res, next) {

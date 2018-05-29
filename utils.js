@@ -1,6 +1,6 @@
-var Baby = require('papaparse');
-var fs = require('fs');
-var request = require('request');
+const Baby = require('papaparse');
+const fs = require('fs');
+const request = require('request');
 function generateOptions(bot, u_message, context) {
 	var ctx = {};
 	if (context.length > 0) {

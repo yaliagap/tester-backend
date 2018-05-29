@@ -8,5 +8,6 @@ create table cognitivetester.bots (
     nombre varchar(30),
     usuario varchar(60),
     password varchar(15),
+    variable varchar(30),
     workspace_id varchar(60)
 );

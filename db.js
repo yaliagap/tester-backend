@@ -41,8 +41,8 @@ DB.prototype.query = function(client, sql, parameters=null,callback){
 	var conn = this;
 
 	//Debug of SQL statements
-	//console.log(sql)
-	
+	console.log(sql)
+	console.log(parameters);
 
 	if (!parameters){
 		client.query(sql,function(err,data){

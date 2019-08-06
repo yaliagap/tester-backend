@@ -14,7 +14,7 @@ module.exports = class Bot {
 			console.log("validando Bot");
 			promises.push(vm.validarLongitud(bot.nombre, 0, 30, 'El nombre debe tener una logitud de máximo 30 caracteres.'));
 			promises.push(vm.validarLongitud(bot.usuario, 0, 60, 'El usuario debe tener una logitud de máximo 60 caracteres.'));
-			promises.push(vm.validarLongitud(bot.password, 0, 15, 'El password tener una logitud de máximo 15 caracteres.'));
+			promises.push(vm.validarLongitud(bot.password, 0, 100, 'El password tener una logitud de máximo 100 caracteres.'));
 			promises.push(vm.validarLongitud(bot.variable, 0, 30, 'La variable debe tener una logitud de máximo 30 caracteres.'));
 			promises.push(vm.validarLongitud(bot.workspace_id, 0, 60, 'El workspace ID debe tener una logitud de máximo 60 caracteres.'));
 			Promise.all(promises).then(function(answer) {

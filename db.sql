@@ -6,8 +6,8 @@ create table cognitivetester.usuarios (
 create table cognitivetester.bots (
     id serial primary key,
     nombre varchar(30),
-    usuario varchar(60),
-    password varchar(15),
+    usuario varchar(100),
+    password varchar(250),
     variable varchar(30),
-    workspace_id varchar(60)
+    workspace_id varchar(100)
 );

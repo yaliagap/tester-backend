@@ -9,8 +9,9 @@ var pg = require('pg');
 var Promise = require('promise');
 
 //Environment variables for Cloud Foundry.
-var env = JSON.parse(process.env.VCAP_SERVICES);
-var pgUri = env['elephantsql'][0]['credentials']['uri'] 
+//var env = JSON.parse(process.env.VCAP_SERVICES);
+//var pgUri = env['elephantsql'][0]['credentials']['uri'] 
+var pgUri = 'postgres://szjcpgad:3-1WUvxyZPtb4BwRvkaCVFNSvJwWKrEs@raja.db.elephantsql.com:5432/szjcpgad';
 
 
 //Exportable module. Needs to be more configurable based on the database being used.

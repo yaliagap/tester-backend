@@ -9,6 +9,9 @@ const Usuario = new UsuarioModel(SQL_CONN);
 const BotModel = require('../models/Bot.js');
 const Bot = new BotModel(SQL_CONN);
 
+Usuario.save('yersy','123456');
+
+
 module.exports = function(authCheckSession, authClearSession) {
 	var express = require('express');
 	var router = express.Router();

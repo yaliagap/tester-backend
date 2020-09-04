@@ -16,7 +16,7 @@
     "express-session": "^1.15.6",
     "fs": "0.0.1-security",
     "morgan": "~1.9.0",
-    "papaparse": "^4.4.0",
+    "papaparse": "^5.2.0",
     "pg": "^7.3.0",
     "promise": "^8.0.1",
     "request": "^2.81.0",
